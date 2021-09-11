@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="Auto Detect" key="soc_proj_app_2-device"/>
+	<item value="" key="soc_proj_app_2-bitFile"/>
+	<item value="" key="soc_proj_app_2-bmmFile"/>
+	<item value="{&quot;cables&quot;:[{&quot;name&quot;:&quot;Digilent Nexys4DDR 210292A6E744A&quot;,&quot;indexContextMap&quot;:{&quot;2&quot;:&quot;jsn-Nexys4DDR-210292A6E744A-13631093-0&quot;}}]}" key="devices_info_Local"/>
+	<item value="Local" key="soc_proj_app_2-target"/>
+	<item value="soc_proj_app_2" key="programfpga.sdxproject"/>
+	<item value="false" key="soc_proj_app_2-skip_rev_check"/>
+	<item value="false" key="soc_proj_app_2-partial_bit"/>
+	<item value="D:\DEV\powerReconf_sw\soc_proj_app_2\Debug\soc_proj_app_2.elf" key="soc_proj_app_2-microblaze_0-initElf"/>
+</section>
