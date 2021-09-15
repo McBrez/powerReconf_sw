@@ -14,21 +14,9 @@ static XHwIcap HwIcap;
 static XGpio Gpio;
 
 #define BITSTREAM_P0_EMPTY_ADDR	0x003B0000U
-#define BITSTREAM_P0_EMPTY_SIZE	287384U
-#define BITSTREAM_P0_FULL_ADDR	0x00400000U
-#define BITSTREAM_P0_FULL_SIZE	287384U
-#define BITSTREAM_P1_EMPTY_ADDR	0x00450000U
-#define BITSTREAM_P1_EMPTY_SIZE	263144U
-#define BITSTREAM_P1_FULL_ADDR	0x00500000U
-#define BITSTREAM_P1_FULL_SIZE	263144U
-#define BITSTREAM_P2_EMPTY_ADDR	0x00550000U
-#define BITSTREAM_P2_EMPTY_SIZE	287384U
-#define BITSTREAM_P2_FULL_ADDR	0x00600000U
-#define BITSTREAM_P2_FULL_SIZE	287384U
-#define BITSTREAM_P3_EMPTY_ADDR	0x00650000U
-#define BITSTREAM_P3_EMPTY_SIZE	263144U
-#define BITSTREAM_P3_FULL_ADDR	0x00700000U
-#define BITSTREAM_P3_FULL_SIZE	263144U
+#define BITSTREAM_P0_EMPTY_SIZE	402992U
+#define BITSTREAM_P0_FULL_ADDR	0x004B0000U
+#define BITSTREAM_P0_FULL_SIZE	402992U
 
 #define RECV_BUFFER_LEN 10
 #define SEND_BUFFER_LEN 100
@@ -40,73 +28,29 @@ u32 composeOperand(u16 real, u16 imag)
 	return (imag_u32 << 16) + real;
 }
 
-void reconfigure(u32 frame, u32 configuration, XHwIcap* hwicap, UINTPTR spiBaseAddress) {
+void reconfigure(u32 configuration, XHwIcap* hwicap, UINTPTR spiBaseAddress) {
 	UINTPTR bitstreamOffset0;
 	UINTPTR bitstreamSize0;
-	UINTPTR bitstreamOffset1;
-	UINTPTR bitstreamSize1;
 
-	switch(frame) {
+	switch(configuration) {
 	case 0:
-		switch(configuration) {
-		case 0:
-			bitstreamOffset0 = BITSTREAM_P0_FULL_ADDR;
-			bitstreamSize0 = BITSTREAM_P0_FULL_SIZE;
-			bitstreamOffset1 = BITSTREAM_P1_EMPTY_ADDR;
-			bitstreamSize1 = BITSTREAM_P1_EMPTY_SIZE;
+		bitstreamOffset0 = BITSTREAM_P0_EMPTY_ADDR;
+		bitstreamSize0 = BITSTREAM_P0_EMPTY_SIZE;
 
-			break;
-
-		case 1:
-			bitstreamOffset0 = BITSTREAM_P0_EMPTY_ADDR;
-			bitstreamSize0 = BITSTREAM_P0_EMPTY_SIZE;
-			bitstreamOffset1 = BITSTREAM_P1_FULL_ADDR;
-			bitstreamSize1 = BITSTREAM_P1_FULL_SIZE;
-
-			break;
-
-		default:
-			return;
-
-		}
 		break;
 
 	case 1:
-		switch(configuration) {
-		case 0:
-			bitstreamOffset0 = BITSTREAM_P2_FULL_ADDR;
-			bitstreamSize0 = BITSTREAM_P2_FULL_SIZE;
-			bitstreamOffset1 = BITSTREAM_P3_EMPTY_ADDR;
-			bitstreamSize1 = BITSTREAM_P3_EMPTY_SIZE;
+		bitstreamOffset0 = BITSTREAM_P0_FULL_ADDR;
+		bitstreamSize0 = BITSTREAM_P0_FULL_SIZE;
 
-			break;
-
-		case 1:
-			bitstreamOffset0 = BITSTREAM_P2_EMPTY_ADDR;
-			bitstreamSize0 = BITSTREAM_P2_EMPTY_SIZE;
-			bitstreamOffset1 = BITSTREAM_P3_FULL_ADDR;
-			bitstreamSize1 = BITSTREAM_P3_FULL_SIZE;
-
-			break;
-
-		default:
-			return;
-
-		}
 		break;
 
 	default:
 		return;
-
 	}
 
 	for(unsigned int wordIndex = 0; wordIndex < bitstreamSize0/4 ; wordIndex++) {
 		u32 address = spiBaseAddress + bitstreamOffset0 + wordIndex*4;
-		u32 buffer = Xil_In32(address);
-		XHwIcap_DeviceWrite(hwicap, &buffer, 1);
-	}
-	for(unsigned int wordIndex = 0; wordIndex < bitstreamSize1/4 ; wordIndex++) {
-		u32 address = spiBaseAddress + bitstreamOffset1 + wordIndex*4;
 		u32 buffer = Xil_In32(address);
 		XHwIcap_DeviceWrite(hwicap, &buffer, 1);
 	}
@@ -177,6 +121,8 @@ int main()
 	XSysMon_SetAdcClkDivisor(&sysMonInst, 32);
 	XSysMon_SetSequencerMode(&sysMonInst, XSM_SEQ_MODE_CONTINPASS);
 
+	reconfigure(0, &HwIcap, ConfigPtr->AxiFullBaseAddress);
+
 	u32 operandX = composeOperand(4, 3);
 	u32 operandY = composeOperand(2, 1);
 
@@ -189,7 +135,23 @@ int main()
 	u32 resultI = experiment.readResult(0, experiment::RESULT_IDX_OUTI);
 	u32 resultOverflow = experiment.readResult(0, experiment::RESULT_IDX_OVERFLOW);
 
-	xil_printf("Results: Real: %d\tImaginary: %d\tOverflow:%d", resultR, resultI, resultOverflow);
+	xil_printf("Results: Real: %d\tImaginary: %d\tOverflow:%d\n", resultR, resultI, resultOverflow);
+
+	reconfigure(1, &HwIcap, ConfigPtr->AxiFullBaseAddress);
+
+	operandX = composeOperand(4, 3);
+	operandY = composeOperand(2, 1);
+
+	experiment.writeOperand(operandX, 0, experiment::OPERAND_IDX_X);
+	experiment.writeOperand(operandY, 0, experiment::OPERAND_IDX_Y);
+
+	MB_Sleep(1000);
+
+	resultR = experiment.readResult(0, experiment::RESULT_IDX_OUTR);
+	resultI = experiment.readResult(0, experiment::RESULT_IDX_OUTI);
+	resultOverflow = experiment.readResult(0, experiment::RESULT_IDX_OVERFLOW);
+
+	xil_printf("Results: Real: %d\tImaginary: %d\tOverflow:%d\n", resultR, resultI, resultOverflow);
 
     return 0;
 }
